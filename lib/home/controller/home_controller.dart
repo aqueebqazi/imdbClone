@@ -4,8 +4,8 @@ import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import 'package:imdb_clone/home/model/top_rated_shows_model.dart';
-import 'package:imdb_clone/http/http_utils.dart';
-import 'package:imdb_clone/utils/base_url.dart';
+import 'package:imdb_clone/core/api/api_call.dart';
+import 'package:imdb_clone/core/api/utils/base_url.dart';
 
 import '../model/get_id_model.dart';
 
@@ -19,9 +19,13 @@ class HomeController extends GetxController {
   List tabNames = ["Now playing", "Upcoming", "Popular", "Top Rated"];
   List<TvShowApi> tvShowData = [];
   bool isloading = true;
+  bool isNowPlayingLoading = true;
+  bool isUpcomingLoading = true;
+  bool isPopularLoading = true;
+  bool isTopRatedLoading = true;
   bool isError = false;
 
-  getNewsApi() async {
+  getTopTenShows() async {
     try {
       isError = false;
       isloading = true;
@@ -35,10 +39,10 @@ class HomeController extends GetxController {
       List newsOfTvShows = response["items"];
 
       tvShowData = newsOfTvShows.map((e) {
-        log(e.toString());
         return TvShowApi.fromJson(e);
       }).toList();
       isloading = false;
+      getNowPlaying();
       update();
       log("isError1" + isError.toString());
     } catch (e) {
@@ -52,9 +56,11 @@ class HomeController extends GetxController {
   }
 
   getTopRatedShows() async {
+    log("GetTopRatedShowsCalled");
     try {
+      isTopRatedLoading = true;
       isError = false;
-      isloading = true;
+      Future.delayed(Duration(milliseconds: 100));
       var response = await getApi(baseUrl, apiHeaders, getNews, parms: {
         "limit": "10",
         "tconst": showId[1].id.substring(6).replaceAll("/", "")
@@ -63,25 +69,27 @@ class HomeController extends GetxController {
       List newsOfTvShows = response["items"];
 
       topRatedShows = newsOfTvShows.map((e) {
-        log(e.toString());
         return TvShowApi.fromJson(e);
       }).toList();
-      isloading = false;
+
+      isTopRatedLoading = false;
       update();
       log("isError1" + isError.toString());
     } catch (e) {
       log("error" + e.toString());
       log("isError" + isError.toString());
       isError = true;
-      isloading = false;
+      isTopRatedLoading = false;
       update();
     }
   }
 
   getUpcoming() async {
+    log("GetUpcomingApiCalled");
     try {
+      isUpcomingLoading = true;
       isError = false;
-      isloading = true;
+
       var response = await getApi(baseUrl, apiHeaders, getNews, parms: {
         "limit": "10",
         "tconst": showId[2].id.substring(6).replaceAll("/", "")
@@ -90,25 +98,25 @@ class HomeController extends GetxController {
       List newsOfTvShows = response["items"];
 
       upcoming = newsOfTvShows.map((e) {
-        log(e.toString());
         return TvShowApi.fromJson(e);
       }).toList();
-      isloading = false;
+      isUpcomingLoading = false;
       update();
       log("isError1" + isError.toString());
     } catch (e) {
       log("error" + e.toString());
       log("isError" + isError.toString());
       isError = true;
-      isloading = false;
+      isUpcomingLoading = false;
       update();
     }
   }
 
   getPopluar() async {
     try {
+      isPopularLoading = true;
       isError = false;
-      isloading = true;
+
       var response = await getApi(baseUrl, apiHeaders, getNews, parms: {
         "limit": "10",
         "tconst": showId[3].id.substring(6).replaceAll("/", "")
@@ -117,17 +125,16 @@ class HomeController extends GetxController {
       List newsOfTvShows = response["items"];
 
       popular = newsOfTvShows.map((e) {
-        log(e.toString());
         return TvShowApi.fromJson(e);
       }).toList();
-      isloading = false;
+      isPopularLoading = false;
       update();
       log("isError1" + isError.toString());
     } catch (e) {
       log("error" + e.toString());
       log("isError" + isError.toString());
       isError = true;
-      isloading = false;
+      isPopularLoading = false;
       update();
     }
   }
@@ -135,43 +142,55 @@ class HomeController extends GetxController {
   getNowPlaying() async {
     try {
       isError = false;
-      isloading = true;
+      isNowPlayingLoading = true;
+      log("nowPlaying" + isNowPlayingLoading.toString());
       var response = await getApi(baseUrl, apiHeaders, getNews, parms: {
         "limit": "10",
         "tconst": showId[4].id.substring(6).replaceAll("/", "")
       });
-      log("response_is");
+
       List newsOfTvShows = response["items"];
 
       nowPlaying = newsOfTvShows.map((e) {
-        log(e.toString());
         return TvShowApi.fromJson(e);
       }).toList();
-      isloading = false;
+      isNowPlayingLoading = false;
+
       update();
       log("isError1" + isError.toString());
     } catch (e) {
       log("error" + e.toString());
       log("isError" + isError.toString());
       isError = true;
-      isloading = false;
+      isNowPlayingLoading = false;
       update();
     }
   }
 
   getShowID() async {
     try {
+      log("fetch id");
       isError = false;
       apiResult = await getApi(baseUrl, apiHeaders, topRatedShowsEncodedPAth);
+      log(apiResult.toString());
       showId = apiResult.map((e) {
         return GetShowId.FromJson(e);
       }).toList();
       log("showIDfetched");
-      getNewsApi();
+      getTopTenShows();
+      log("isEroor" + isError.toString());
       update();
     } catch (e) {
       isError = true;
       update();
     }
+  }
+
+  @override
+  void onInit() {
+    log("init Getx");
+    isError = false;
+    // TODO: implement onInit
+    super.onInit();
   }
 }
